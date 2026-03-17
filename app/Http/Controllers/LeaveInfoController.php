@@ -36,4 +36,21 @@ class LeaveInfoController extends Controller
             'data' => $balances
         ]);
     }
+
+    /**
+     * Get all users with their leave balances for Admin view.
+     */
+    public function getAdminUsers(Request $request): JsonResponse
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['success' => false, 'message' => 'Forbidden. Admins only.'], 403);
+        }
+
+        $users = \App\Models\User::with(['balances.leaveType'])->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $users
+        ]);
+    }
 }

@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/leave-requests/{id}/cancel', [LeaveRequestController::class, 'cancel']);
 
     // --- ADMIN ENDPOINTS ---
+    Route::get('/admin/users', [LeaveInfoController::class, 'getAdminUsers']);
     Route::get('/leave-requests', [LeaveRequestController::class, 'index']);
     Route::post('/leave-requests/{id}/approve', [LeaveRequestController::class, 'approve']);
     Route::post('/leave-requests/{id}/reject', [LeaveRequestController::class, 'reject']);
