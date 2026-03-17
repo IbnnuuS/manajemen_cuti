@@ -7,6 +7,9 @@ use App\Models\LeaveBalance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Requests\StoreLeaveRequest;
+use App\Http\Requests\ApproveLeaveRequest;
+use App\Http\Requests\RejectLeaveRequest;
 use App\Services\LeaveRequestService;
 
 class LeaveRequestController extends Controller
@@ -36,17 +39,10 @@ class LeaveRequestController extends Controller
         ]);
     }
 
-    public function submit(Request $request): JsonResponse
+    public function submit(StoreLeaveRequest $request): JsonResponse
     {
-        $request->validate([
-            'leave_type_id' => 'required|exists:leave_types,id',
-            'start_date' => 'required|date|after_or_equal:today',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'reason' => 'required|string',
-        ]);
-
         try {
-            $leaveRequest = $this->leaveRequestService->submitRequest($request->user(), $request->all());
+            $leaveRequest = $this->leaveRequestService->submitRequest($request->user(), $request->validated());
 
             return response()->json([
                 'success' => true,
@@ -109,12 +105,8 @@ class LeaveRequestController extends Controller
         ]);
     }
 
-    public function approve($id, Request $request): JsonResponse
+    public function approve($id, ApproveLeaveRequest $request): JsonResponse
     {
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['success' => false, 'message' => 'Forbidden. Admins only.'], 403);
-        }
-
         $leaveRequest = LeaveRequest::find($id);
 
         if (!$leaveRequest) {
@@ -122,7 +114,7 @@ class LeaveRequestController extends Controller
         }
 
         try {
-            $approvedRequest = $this->leaveRequestService->approveRequest($leaveRequest, $request->user(), $request->notes);
+            $approvedRequest = $this->leaveRequestService->approveRequest($leaveRequest, $request->user(), $request->validated('notes'));
 
             return response()->json([
                 'success' => true,
@@ -137,12 +129,8 @@ class LeaveRequestController extends Controller
         }
     }
 
-    public function reject($id, Request $request): JsonResponse
+    public function reject($id, RejectLeaveRequest $request): JsonResponse
     {
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['success' => false, 'message' => 'Forbidden. Admins only.'], 403);
-        }
-
         $leaveRequest = LeaveRequest::find($id);
 
         if (!$leaveRequest) {
@@ -150,7 +138,7 @@ class LeaveRequestController extends Controller
         }
 
         try {
-            $rejectedRequest = $this->leaveRequestService->rejectRequest($leaveRequest, $request->user(), $request->notes);
+            $rejectedRequest = $this->leaveRequestService->rejectRequest($leaveRequest, $request->user(), $request->validated('notes'));
 
             return response()->json([
                 'success' => true,
