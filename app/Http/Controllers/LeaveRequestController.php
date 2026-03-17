@@ -59,6 +59,26 @@ class LeaveRequestController extends Controller
             ], 400);
         }
 
+        // Cek apakah ada request yang overlap
+        $hasOverlap = LeaveRequest::where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->where(function ($query) use ($start, $end) {
+                $query->whereBetween('start_date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+                      ->orWhereBetween('end_date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+                      ->orWhere(function ($q) use ($start, $end) {
+                          $q->where('start_date', '<=', $start->format('Y-m-d'))
+                            ->where('end_date', '>=', $end->format('Y-m-d'));
+                      });
+            })
+            ->exists();
+
+        if ($hasOverlap) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The requested dates overlap with an existing pending or approved leave request.'
+            ], 400);
+        }
+
         // Cek Balance
         $balance = LeaveBalance::where('user_id', $user->id)
             ->where('leave_type_id', $request->leave_type_id)
@@ -240,6 +260,14 @@ class LeaveRequestController extends Controller
             return response()->json(['success' => false, 'message' => 'Forbidden. You do not own this request.'], 403);
         }
 
+        // Hanya untuk status final
+        if (!in_array($leaveRequest->status, ['approved', 'rejected', 'canceled'])) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'You can only delete requests with a final status (approved, rejected, canceled).'
+            ], 400);
+        }
+
         // Jika request di-approve dan mau dihapus, sebaiknya kembalikan kuota (opsional, tapi baiknya iya)
         if ($leaveRequest->status === 'approved') {
             $balance = LeaveBalance::where('user_id', $leaveRequest->user_id)
@@ -255,11 +283,7 @@ class LeaveRequestController extends Controller
         }
 
         $leaveRequest->deleted_by = $user->id;
-        $leaveRequest->deleted_at = now();
-        // Pakai update langsung karena kolom deleted_at tidak ditangani otomatis soft deletes (asumsi belum dipasang traitnya)
         $leaveRequest->save();
-        
-        // Kita juga bisa tambahkan delete() standar laravel jika ternyata ada SoftDeletes di DB maupun table
         $leaveRequest->delete();
 
         return response()->json([
