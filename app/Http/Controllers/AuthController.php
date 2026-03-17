@@ -3,12 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     /**
      * Handle user login.
      *
@@ -21,33 +29,26 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $result = $this->authService->login($request->only('email', 'password'));
 
-        // Check if user exists and password is correct
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (!$result) {
             return response()->json([
                 'success' => false,
                 'message' => 'Credentials do not match our records.',
             ], 401);
         }
 
-        // Revoke existing tokens (optional, depending on if you want single device login, but generally good for security)
-        $user->tokens()->delete();
-
-        // Create new token
-        $token = $user->createToken('auth-token')->plainTextToken;
-
         return response()->json([
             'success' => true,
             'message' => 'Login successful',
             'data' => [
                 'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
+                    'id' => $result['user']->id,
+                    'name' => $result['user']->name,
+                    'email' => $result['user']->email,
+                    'role' => $result['user']->role,
                 ],
-                'token' => $token,
+                'token' => $result['token'],
             ],
         ], 200);
     }
@@ -59,8 +60,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        // Revoke the token that was used to authenticate the current request
-        $request->user()->currentAccessToken()->delete();
+        $this->authService->logout($request->user());
 
         return response()->json([
             'success' => true,
