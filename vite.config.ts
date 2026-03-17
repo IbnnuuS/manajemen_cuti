@@ -24,4 +24,11 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    // @ts-ignore — vitest config is recognized at runtime
+    test: {
+        globals: true,
+        environment: 'jsdom',
+        include: ['resources/js/tests/**/*.test.ts'],
+    },
 });
+
