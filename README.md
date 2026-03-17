@@ -86,37 +86,6 @@ Buka browser: **http://127.0.0.1:8000**
 | Admin | admin@example.com | password |
 
 ---
-
-## 🧪 Menjalankan Test
-
-### Backend — PHPUnit
-
-```bash
-# Jalankan semua test
-php artisan test
-
-# Jalankan hanya feature test leave request
-php artisan test --filter=LeaveRequestTest
-
-# Dengan tampilan verbose
-php artisan test --verbose
-```
-
-### Frontend — Vitest
-
-```bash
-# Jalankan semua test
-npx vitest run
-
-# Mode watch (auto-rerun saat file berubah)
-npx vitest
-
-# Dengan coverage report
-npx vitest run --coverage
-```
-
----
-
 ## 📂 Struktur Folder Penting
 
 ```
