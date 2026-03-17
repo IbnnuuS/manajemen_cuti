@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class LeaveBalance extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'leave_type_id',
+        'year',
+        'total_quota',
+        'used'
+    ];
+
+    // 🔹 RELASI
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function leaveType()
+    {
+        return $this->belongsTo(LeaveType::class);
+    }
+}
