@@ -6,6 +6,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\LeaveInfoController;
 
+use App\Http\Controllers\AdminController;
+
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -27,8 +29,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/leave-requests/{id}/cancel', [LeaveRequestController::class, 'cancel']);
 
     // --- ADMIN ENDPOINTS ---
-    Route::get('/admin/users', [LeaveInfoController::class, 'getAdminUsers']);
-    Route::get('/leave-requests', [LeaveRequestController::class, 'index']);
+    Route::get('/admin/dashboard-stats', [AdminController::class, 'getDashboardStats']);
+    Route::get('/admin/users', [AdminController::class, 'getUsersPaginated']);
+    Route::post('/admin/users', [AdminController::class, 'storeUser']);
+    Route::delete('/admin/users/{id}', [AdminController::class, 'destroyUser']);
+    
+    Route::get('/admin/leave-requests', [LeaveRequestController::class, 'index']); // Specific for Admin History
+    Route::get('/leave-requests', [LeaveRequestController::class, 'index']); // Legacy backward compat
+    
     Route::post('/leave-requests/{id}/approve', [LeaveRequestController::class, 'approve']);
     Route::post('/leave-requests/{id}/reject', [LeaveRequestController::class, 'reject']);
 

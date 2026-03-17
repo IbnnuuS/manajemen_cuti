@@ -22,11 +22,15 @@ Route::get('/requests/create', function () {
 })->name('requests.create');
 
 // Admin Frontend Routes
+Route::get('/admin/dashboard', function () {
+    return Inertia::render('AdminDashboard');
+})->name('admin.dashboard');
+
 Route::get('/admin/requests', function () {
     return Inertia::render('AdminLeavePage');
 })->name('admin.requests');
 
-Route::get('/admin/users', function () {
-    return Inertia::render('AdminUserPage');
-})->name('admin.users');
+Route::get('/admin/users/manage', function () {
+    return Inertia::render('AdminManageUsers');
+})->name('admin.users.manage');
 

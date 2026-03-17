@@ -1,70 +1,123 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { router, Link } from '@inertiajs/vue3';
 
 const authStore = useAuthStore();
+const isSidebarOpen = ref(true);
+
+const toggleSidebar = () => {
+    isSidebarOpen.value = !isSidebarOpen.value;
+    if (isSidebarOpen.value) {
+        document.body.classList.remove('toggle-sidebar');
+    } else {
+        document.body.classList.add('toggle-sidebar');
+    }
+};
 
 const handleLogout = async () => {
     await authStore.logout();
     router.visit('/login');
 };
 
+// Ensure body class is correct on load
+onMounted(() => {
+    document.body.classList.remove('toggle-sidebar');
+    // For smaller screens, usually sidebar is closed initially
+    if (window.innerWidth < 1200) {
+        isSidebarOpen.value = false;
+        document.body.classList.add('toggle-sidebar');
+    }
+});
+
 const navigation = [
-    { name: 'Dashboard', href: '/dashboard', role: 'user' },
-    { name: 'Submit Leave', href: '/requests/create', role: 'user' },
-    { name: 'All Requests (Admin)', href: '/admin/requests', role: 'admin' },
+    // Karyawan Menu
+    { name: 'Dasbor', href: '/dashboard', icon: 'bi-grid', role: 'user' },
+    { name: 'Pengajuan Cuti', href: '/requests/create', icon: 'bi-journal-text', role: 'user' },
+    
+    // Admin Menu
+    { name: 'Dasbor Statistik', href: '/admin/dashboard', icon: 'bi-grid', role: 'admin' },
+    { name: 'Kelola Karyawan', href: '/admin/users/manage', icon: 'bi-people', role: 'admin' },
+    { name: 'Seluruh Riwayat Cuti', href: '/admin/requests', icon: 'bi-journals', role: 'admin' },
 ];
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-50 flex flex-col font-sans">
-        <!-- Navigation Bar -->
-        <nav class="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-100">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 flex items-center bg-indigo-600 text-white w-10 h-10 rounded-xl justify-center font-bold text-xl shadow-md">
-                            LR
-                        </div>
-                        <div class="hidden md:ml-8 md:flex md:space-x-8">
-                            <template v-for="item in navigation" :key="item.name">
-                                <Link v-if="(item.role === 'admin' && authStore.isAdmin) || (item.role === 'user' && !authStore.isAdmin)"
-                                   :href="item.href"
-                                   class="inline-flex items-center px-1 pt-1 border-b-2"
-                                   :class="[ $page.url.startsWith(item.href) ? 'border-indigo-500 text-gray-900 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' ]">
-                                    {{ item.name }}
-                                </Link>
-                            </template>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div class="hidden sm:flex sm:items-center">
-                            <div class="text-sm border-r border-gray-200 pr-4 mr-4 text-gray-700">
-                                Welcome, <span class="font-bold text-gray-900">{{ authStore.user?.name }}</span>
-                                <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
-                                      :class="authStore.isAdmin ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'">
-                                    {{ authStore.user?.role }}
-                                </span>
+    <div class="h-100">
+        <!-- ======= Header ======= -->
+        <header id="header" class="header fixed-top d-flex align-items-center bg-white">
+            <div class="d-flex align-items-center justify-content-between">
+                <Link href="/" class="logo d-flex align-items-center">
+                    <span class="d-none d-lg-block text-primary">Leave<span class="text-dark">Hub</span></span>
+                </Link>
+                <i class="bi bi-list toggle-sidebar-btn cursor-pointer" @click="toggleSidebar"></i>
+            </div>
+
+            <nav class="header-nav ms-auto">
+                <ul class="d-flex align-items-center">
+                    <li class="nav-item dropdown pe-3">
+                        <a class="nav-link nav-profile d-flex align-items-center pe-0 cursor-pointer" href="#" data-bs-toggle="dropdown">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-weight: bold;">
+                                {{ authStore.user?.name?.charAt(0) }}
                             </div>
-                            <button @click="handleLogout"
-                               class="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                                Logout
-                            </button>
-                        </div>
+                            <span class="d-none d-md-block dropdown-toggle ps-2">{{ authStore.user?.name }}</span>
+                        </a><!-- End Profile Iamge Icon -->
+
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
+                            <li class="dropdown-header">
+                                <h6>{{ authStore.user?.name }}</h6>
+                                <span>{{ authStore.user?.role === 'admin' ? 'Administrator' : 'Karyawan' }}</span>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center" href="#" @click.prevent="handleLogout">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Keluar</span>
+                                </a>
+                            </li>
+                        </ul><!-- End Profile Dropdown Items -->
+                    </li><!-- End Profile Nav -->
+                </ul>
+            </nav>
+        </header><!-- End Header -->
+
+        <!-- ======= Sidebar ======= -->
+        <aside id="sidebar" class="sidebar">
+            <ul class="sidebar-nav" id="sidebar-nav">
+                <li class="nav-heading">Halaman Utama</li>
+
+                <template v-for="item in navigation" :key="item.name">
+                    <li class="nav-item" v-if="(item.role === 'admin' && authStore.isAdmin) || (item.role === 'user' && !authStore.isAdmin)">
+                        <Link :href="item.href" class="nav-link" :class="{ 'collapsed': !$page.url.startsWith(item.href) }">
+                            <i class="bi" :class="item.icon"></i>
+                            <span>{{ item.name }}</span>
+                        </Link>
+                    </li>
+                </template>
+            </ul>
+        </aside><!-- End Sidebar-->
+
+        <main id="main" class="main mt-5 pt-4">
+            <!-- Global loading state -->
+            <div v-if="authStore.loading" class="position-absolute w-100 h-100 top-0 start-0 bg-white" style="z-index: 999; opacity: 0.7;">
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Memuat...</span>
                     </div>
                 </div>
             </div>
-        </nav>
-
-        <!-- Main Content Area -->
-        <main class="flex-1 w-full max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <!-- Global loading state -->
-            <div v-if="authStore.loading" class="fixed inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-center justify-center">
-                <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-            </div>
             
-            <slot />
+            <section class="section">
+                <slot />
+            </section>
         </main>
     </div>
 </template>
+
+<style scoped>
+.cursor-pointer {
+    cursor: pointer;
+}
+</style>

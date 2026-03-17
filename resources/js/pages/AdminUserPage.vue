@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import AuthenticatedLayout from '../layouts/AuthenticatedLayout.vue';
 import api from '../api';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 
 interface User {
     id: number;
@@ -23,7 +23,7 @@ const loading = ref(true);
 const fetchUsers = async () => {
     loading.value = true;
     try {
-        const response = await api.get('/admin/users'); // Requires a generic backend endpoint
+        const response = await api.get('/admin/users');
         users.value = response.data.data;
     } catch (e) {
         console.error('Failed to load users for admin', e);
@@ -38,56 +38,67 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Employee Balances" />
+    <Head title="Sisa Cuti Karyawan" />
     <AuthenticatedLayout>
-        <div class="space-y-6 animate-fade-in-up">
-            <div class="sm:flex sm:items-center sm:justify-between mb-8">
-                <div>
-                    <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Employee Directory</h1>
-                    <p class="mt-2 text-sm text-gray-600">Overview of all employees and their respective leave counters.</p>
+        <div class="pagetitle">
+            <h1>Direktori Karyawan</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><Link href="/">Beranda</Link></li>
+                    <li class="breadcrumb-item">Admin</li>
+                    <li class="breadcrumb-item active">Karyawan</li>
+                </ol>
+            </nav>
+        </div><!-- End Page Title -->
+
+        <section class="section">
+            <div class="row" v-if="loading">
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Memuat data karyawan...</span>
+                    </div>
                 </div>
             </div>
 
-            <div v-if="loading" class="bg-white px-4 py-12 shadow-sm rounded-2xl flex justify-center border border-gray-100">
-                <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-            </div>
-
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div v-for="user in users" :key="user.id" class="bg-white shadow-sm rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-                    <div class="p-6 border-b border-gray-50 flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+            <div class="row" v-else>
+                <div v-for="user in users" :key="user.id" class="col-xl-4 col-md-6 mb-4">
+                    <div class="card info-card h-100 shadow-sm border-0">
+                        <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
+                            
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mb-3 text-uppercase" style="width: 64px; height: 64px; font-size: 2rem; font-weight: bold;">
                                 {{ user.name.charAt(0) }}
                             </div>
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-900">{{ user.name }}</h3>
-                                <p class="text-sm text-gray-500">{{ user.email }}</p>
-                            </div>
-                        </div>
-                        <span :class="{'bg-purple-100 text-purple-800': user.role === 'admin', 'bg-green-100 text-green-800': user.role === 'user'}" class="px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize">
-                            {{ user.role }}
-                        </span>
-                    </div>
-                    <div class="px-6 py-4 bg-gray-50/50">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Leave Balances</h4>
-                        <div class="space-y-3">
-                            <div v-for="(balance, index) in user.balances" :key="index" class="flex justify-between items-center text-sm">
-                                <span class="font-medium text-gray-700">{{ balance.leave_type.name }}</span>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-gray-900 font-bold bg-white px-2 py-0.5 rounded border border-gray-200">{{ balance.total_quota - balance.used }} left</span>
-                                    <span class="text-gray-400 text-xs">/ {{ balance.total_quota }}</span>
+
+                            <h5 class="fw-bold fs-5 text-dark">{{ user.name }}</h5>
+                            <h6 class="text-muted small">{{ user.email }}</h6>
+                            <span class="badge mb-3" :class="user.role === 'admin' ? 'bg-danger' : 'bg-success'">
+                                {{ user.role === 'admin' ? 'Administrator' : 'Karyawan' }}
+                            </span>
+                            
+                            <div class="w-100 mt-2 px-3">
+                                <p class="text-muted small fw-bold mb-2 text-uppercase text-start" style="letter-spacing: 0.5px">Kuota Cuti Berjalan</p>
+                                
+                                <div v-if="user.balances && user.balances.length > 0">
+                                    <div v-for="(balance, index) in user.balances" :key="index" class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                                        <span class="text-dark small">{{ balance.leave_type.name }}</span>
+                                        <span class="badge bg-light text-dark border">
+                                            Sisa: {{ balance.total_quota - balance.used }} / {{ balance.total_quota }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div v-else class="text-center text-muted small fst-italic py-2 border rounded">
+                                    Belum ada jatah cuti.
                                 </div>
                             </div>
-                            <div v-if="!user.balances || user.balances.length === 0" class="text-sm text-gray-500 italic">
-                                No balances recorded.
-                            </div>
                         </div>
                     </div>
                 </div>
-                <div v-if="users.length === 0" class="col-span-full py-12 text-center text-gray-500 bg-white rounded-2xl border border-gray-100">
-                    No users found in the system.
+
+                <div v-if="users.length === 0" class="col-12 text-center text-muted py-5">
+                    <i class="bi bi-people-fill fs-1"></i>
+                    <p class="mt-2">Tidak ada pengguna terdaftar di sistem.</p>
                 </div>
             </div>
-        </div>
+        </section>
     </AuthenticatedLayout>
 </template>
